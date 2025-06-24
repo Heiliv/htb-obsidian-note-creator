@@ -29,7 +29,7 @@ Este script automatiza la creación de una estructura de notas en **Obsidian** p
 ## 🛠️ Uso
 
 ```bash
-chmod +x obsidian_note_generator.sh
+chmod +x obsidian_note.sh
 ./obsidian_note.sh <IP> <nombre_maquina>
 ```
 
