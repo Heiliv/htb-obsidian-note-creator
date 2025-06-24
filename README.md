@@ -1,0 +1,1 @@
+# htb-obsidian-note-creator
