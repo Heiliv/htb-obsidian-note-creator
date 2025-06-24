@@ -1,68 +1,91 @@
-# 🧠 HTB Obsidian Note Creator
+#!/bin/bash
 
-Este script automatiza la creación de una estructura de notas en **Obsidian** para organizar la resolución de máquinas en **Hack The Box**, además de iniciar la conexión VPN.
+# --- Comprobar que se han pasado dos argumentos ---
 
----
+if [ $# -lt 2 ]; then
 
-## 🚀 ¿Qué hace?
+    echo "Uso: $0 <IP> <nombre_maquina>"
 
-1. Valida la IP y nombre de la máquina que le pases.
-2. Comprueba si tienes **Obsidian** instalado (y ofrece instalarlo si no).
-3. Crea un conjunto de archivos `.md` con secciones útiles para pentesting:
-   - Enumeración
-   - Evaluación de vulnerabilidades
-   - Explotación
-   - Post-Explotación
-4. Intenta conectar a la VPN de Hack The Box usando el archivo `htb.ovpn`.
+    exit 1
 
----
+fi
 
-## 📦 Requisitos
+IP=$1
 
-- Sistema operativo basado en Debian (para instalación de Obsidian vía `apt`).
-- Tener configurado el archivo `htb.ovpn` en la misma carpeta del script.
-- Obsidian instalado o permisos sudo para instalarlo.
-- Carpeta de notas existente en `~/Documents/Obsidian Vault/`.
+MAQUINA=$2
 
----
+# --- Validar que el primer argumento es una IP válida ---
 
-## 🛠️ Uso
+IP_REGEX="^((25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])\.){3}(25[0-5]|2[0-4][0-9]|[1-9]?[0-9])$"
 
-```bash
-chmod +x obsidian_note_generator.sh
-./obsidian_note.sh <IP> <nombre_maquina>
-```
+if [[ $IP =~ $IP_REGEX ]]; then
 
-Ejemplo:
+    echo "Dirección IP válida: $IP"
 
-```bash
-./obsidian_note.sh 10.10.10.10 Blue
-```
+else
 
----
+    echo "Error: '$IP' no es una dirección IP válida."
 
-## 📝 Estructura de archivos generados
+    exit 1
 
-```
-~/Documents/Obsidian Vault/Blue/
-├── Enumeracion_Blue.md
-├── Evaluacion_de_Vulnerabilidades_Blue.md
-├── Explotacion_Blue.md
-└── Post-Explotación_Blue.md
-```
+fi
 
----
+# --- Comprobar si Obsidian está instalado ---
 
-## ⚠️ Notas
+if ! command -v obsidian >/dev/null 2>&1; then
 
-- El script no edita los archivos `.md`, solo los genera vacíos para que tú los rellenes.
-- La conexión VPN requiere que `htb.ovpn` esté bien configurado y en la misma carpeta que este script.
+    echo "Obsidian no está instalado."
 
----
+    read -p "¿Quieres instalar Obsidian? (y/n): " respuesta
 
-## 📇 Autor
+    if [[ "$respuesta"  "y" || "$respuesta"  "Y" ]]; then
 
-**Pablo García Maturana**  
-[LinkedIn](https://www.linkedin.com/in/pablo-garcia-maturana/) | [Hack The Box](https://app.hackthebox.com/profile/1007679)
+        echo "Instalando Obsidian..."
 
----
+        sudo apt update
+
+        sudo apt install -y obsidian
+
+        echo "Obsidian ha sido instalado correctamente."
+
+    else
+
+        echo "Obsidian no será instalado."
+
+        exit 0
+
+    fi
+
+fi
+
+# --- Crear las carpetas y archivos en Obsidian ---
+
+file_path="/home/$USER/Documents/Obsidian Vault/$MAQUINA"
+
+mkdir -p "$file_path"
+
+touch "$file_path/Enumeracion_$MAQUINA.md" \
+
+      "$file_path/Evaluacion_de_Vulnerabilidades_$MAQUINA.md" \
+
+      "$file_path/Explotacion_$MAQUINA.md" \
+
+      "$file_path/Post-Explotación_$MAQUINA.md"
+
+echo "Archivos creados en $file_path."
+
+# --- Conectar a Hack the Box con OpenVPN ---
+
+OVPN_FILE="htb.ovpn"
+
+if [ ! -f "$OVPN_FILE" ]; then
+
+    echo "Error: No se encuentra el archivo de configuración '$OVPN_FILE'."
+
+    exit 1
+
+fi
+
+echo "Conectando a Hack the Box..."
+
+sudo openvpn --config "$OVPN_FILE" --remote "$IP"
